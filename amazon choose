@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能选品分析系统 · 主管完整版</title>
+<style>
+:root{
+  --ink:#1a1a2e;--ink-light:#444;--ink-muted:#888;
+  --paper:#f8f6f2;--paper-warm:#f0ece4;
+  --accent:#c0390b;--accent-light:#fdf0eb;
+  --green:#1a6b44;--green-light:#e8f5ee;
+  --amber:#b07010;--amber-light:#fdf5e0;
+  --blue:#1a4a7a;--blue-light:#e8f0f8;
+  --purple:#5a3a8a;--purple-light:#f0eaf8;
+  --red:#c0200a;--red-light:#fdecea;
+  --border:#ddd8cf;--border-light:#eee8df;
+  --white:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue',Arial,'Noto Sans SC',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;}
+.page{max-width:920px;margin:0 auto;padding:32px 24px;}
+.header{margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid var(--ink);}
+.header h1{font-size:26px;font-weight:700;letter-spacing:-0.5px;}
+.header p{font-size:13px;color:var(--ink-light);margin-top:6px;}
+
+/* Tab navigation */
+.tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;position:sticky;top:0;background:var(--paper);padding:10px 0;z-index:10;border-bottom:1px solid var(--border);}
+.tab{padding:8px 14px;font-size:12px;font-weight:600;border-radius:6px;border:1px solid var(--border);background:var(--white);color:var(--ink-light);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.tab.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.sec-title{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin:1.5rem 0 1rem;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.sec-title:first-child{margin-top:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;}
+.field label{font-size:12px;font-weight:500;color:var(--ink-light);}
+.field input,.field select,.field textarea{
+  font-family:inherit;font-size:13px;color:var(--ink);
+  background:var(--white);border:1px solid var(--border);
+  border-radius:6px;padding:8px 10px;width:100%;
+  transition:border-color 0.15s;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{min-height:90px;resize:vertical;line-height:1.6;}
+.warn-label{color:var(--red);}
+.hint{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+.btn{
+  width:100%;padding:14px;font-family:inherit;font-size:15px;font-weight:600;
+  background:var(--ink);color:var(--white);border:none;border-radius:8px;
+  cursor:pointer;letter-spacing:0.5px;margin-top:1.5rem;transition:background 0.15s;
+}
+.btn:hover{background:#333;}
+.btn:disabled{background:#999;cursor:not-allowed;}
+.btn-secondary{background:var(--white);color:var(--ink);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--paper-warm);}
+
+/* Result styles */
+.result-wrap{margin-top:2rem;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;}
+.card-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
+.sc{background:var(--paper);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light);}
+.sc .sl{font-size:11px;color:var(--ink-muted);margin-bottom:5px;}
+.sc .sv{font-size:22px;font-weight:700;}
+.total-box{background:var(--blue-light);border:1px solid #c0d0e8;border-radius:10px;padding:14px 20px;text-align:center;}
+.total-box .tl{font-size:11px;color:var(--blue);margin-bottom:3px;font-weight:500;}
+.total-box .tv{font-size:32px;font-weight:700;color:var(--blue);}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 14px;border-radius:20px;margin-top:6px;}
+.b-go{background:var(--green-light);color:var(--green);}
+.b-maybe{background:var(--amber-light);color:var(--amber);}
+.b-no{background:var(--red-light);color:var(--red);}
+.dim-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-light);}
+.dim-row:last-child{border-bottom:none;}
+.dim-name{font-size:13px;color:var(--ink-light);flex:1;}
+.dim-wt{font-size:10px;color:var(--ink-muted);min-width:28px;}
+.bar-wrap{width:80px;height:6px;background:var(--paper);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;}
+.dim-sc{font-size:13px;font-weight:600;min-width:38px;text-align:right;}
+.dim-pts{font-size:11px;color:var(--ink-muted);min-width:44px;text-align:right;}
+.tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px;font-weight:500;}
+.t-go{background:var(--green-light);color:var(--green);}
+.t-risk{background:var(--red-light);color:var(--red);}
+.t-warn{background:var(--amber-light);color:var(--amber);}
+.t-info{background:var(--blue-light);color:var(--blue);}
+.issue-card{background:var(--paper);border:1px solid var(--border-light);border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.issue-hd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.issue-hd strong{font-size:13px;}
+.issue-sev{font-size:11px;font-weight:600;}
+.issue-desc{font-size:12px;color:var(--ink-light);line-height:1.6;margin-bottom:8px;}
+.issue-sol{font-size:12px;line-height:1.6;}
+.sp-card{background:var(--green-light);border:1px solid #b0d8c0;border-radius:8px;padding:12px 14px;margin-bottom:10px;}
+.sp-card h4{font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px;}
+.sp-card p{font-size:12px;color:var(--green);margin:2px 0;line-height:1.5;}
+.veto-box{background:var(--red-light);border:1.5px solid #f0b0a0;border-radius:12px;padding:20px 24px;margin-bottom:16px;}
+.veto-box h3{font-size:15px;font-weight:700;color:var(--red);margin-bottom:10px;}
+.veto-box p{font-size:13px;color:var(--red);margin:6px 0;line-height:1.6;}
+.improve-box{background:var(--amber-light);border-radius:8px;padding:14px 16px;margin-top:12px;}
+.improve-box h4{font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px;}
+.improve-box p{font-size:13px;color:var(--amber);margin:4px 0;line-height:1.5;}
+.action-box{background:var(--green-light);border-radius:8px;padding:14px 16px;margin-top:12px;}
+.action-box h4{font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;}
+.action-box p{font-size:13px;color:var(--green);margin:4px 0;line-height:1.5;}
+.profit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.divider{height:1px;background:var(--border-light);margin:16px 0;}
+.sec-hd{font-size:12px;font-weight:600;color:var(--ink-light);letter-spacing:1px;text-transform:uppercase;margin:14px 0 10px;padding:6px 10px;background:var(--paper);border-radius:6px;}
+.loading{text-align:center;padding:40px;color:var(--ink-muted);font-size:14px;}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-4px;margin-right:8px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Competitor table */
+.comp-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;}
+.comp-table th{text-align:left;padding:6px 8px;background:var(--paper);font-weight:600;color:var(--ink-light);font-size:11px;border-bottom:1px solid var(--border);}
+.comp-table td{padding:4px 8px;border-bottom:1px solid var(--border-light);}
+.comp-table input{font-size:12px;padding:5px 6px;}
+
+/* Funding summary */
+.fund-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+.fund-cell{background:var(--purple-light);border-radius:8px;padding:12px;text-align:center;}
+.fund-cell .fl{font-size:11px;color:var(--purple);margin-bottom:4px;}
+.fund-cell .fv{font-size:18px;font-weight:700;color:var(--purple);}
+
+@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}.profit-grid{grid-template-columns:1fr 1fr;}.fund-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>AI 智能选品分析系统 · 主管完整版</h1>
+    <p>覆盖选品判断 · 竞品深度 · 关键词 · 资金规划 · Listing规划 · 风险评估 — 一键输出主管级选品报告</p>
+  </div>
+
+  <div style="background:var(--blue-light);border:1px solid #c0d0e8;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div style="font-size:13px;font-weight:600;color:var(--blue);white-space:nowrap;">🔑 DeepSeek API Key</div>
+    <input type="password" id="deepseek_key" placeholder="sk-xxxxxxxxxxxxxxxx" style="flex:1;min-width:200px;font-size:13px;padding:8px 12px;border:1px solid #c0d0e8;border-radius:6px;background:white;outline:none;">
+    <div style="font-size:11px;color:var(--blue);white-space:nowrap;">仅保存在本地，不会上传</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+    <div id="flow-status" style="font-size:12px;color:#888;font-weight:500;">📍 第1步：填写市场数据 → AI判断是否值得入场</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveToHistory()" style="padding:6px 14px;font-size:12px;background:white;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-family:inherit;">💾 保存记录</button>
+      <button onclick="showHistory()" style="padding:6px 14px;font-size:12px;background:white;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-family:inherit;">📂 历史记录</button>
+    </div>
+  </div>
+  <div id="history-panel" style="display:none;background:#f0ece4;border-radius:10px;padding:14px;margin-bottom:16px;max-height:300px;overflow-y:auto;"></div>
+  <div style="height:4px;border-radius:2px;background:#eee;margin-bottom:18px;overflow:hidden;">
+    <div id="progress-fill" style="width:14%;height:100%;background:#c0390b;transition:width 0.3s;"></div>
+  </div>
+<div class="tabs">
+    <div class="tab active" onclick="switchTab(0,this)">① 基础与市场</div>
+    <div class="tab" onclick="switchTab(1,this)">② 竞品深度</div>
+    <div class="tab" onclick="switchTab(2,this)">③ 关键词</div>
+    <div class="tab" onclick="switchTab(3,this)">④ 利润与资金</div>
+    <div class="tab" onclick="switchTab(4,this)">⑤ Listing规划</div>
+    <div class="tab" onclick="switchTab(5,this)">⑥ 风险与评论</div>
+    <div class="tab" onclick="switchTab(6,this)">⑦ 商品打分</div>
+  </div>
+
+  <!-- TAB 0: Basic & Market -->
+  <div class="tab-content active" id="tab0">
+    <div class="sec-title">基本信息</div>
+    <div class="grid2">
+      <div class="field"><label>产品名称</label><input type="text" id="product_name" placeholder="例：蜂鸟喂食器"></div>
+      <div class="field"><label>目标站点</label><select id="market"><option>美国站</option><option>欧洲站</option><option>日本站</option><option>加拿大站</option></select></div>
+    </div>
+
+    <div class="sec-title">市场数据</div>
+    <div class="grid3">
+      <div class="field"><label>核心词月搜索量</label><input type="number" id="search_vol" placeholder="例：615203"><div class="hint">卖家精灵关键词工具</div></div>
+      <div class="field"><label>亚马逊搜索结果总数</label><input type="number" id="amz_results" placeholder="例：4871"><div class="hint">亚马逊搜索框直接看结果数</div></div>
+      <div class="field"><label>TOP100月总销量</label><input type="number" id="total_sales" placeholder="例：579062"><div class="hint">卖家精灵市场分析</div></div>
+      <div class="field"><label>平均售价（$）</label><input type="number" id="avg_price" placeholder="例：25.01" step="0.01"></div>
+      <div class="field"><label>TOP10平均Review数</label><input type="number" id="avg_review" placeholder="例：3667"></div>
+      <div class="field"><label>销量集中度TOP3（%）</label><input type="number" id="concentration" placeholder="例：55" max="100"><div class="hint">TOP3销量÷TOP100总销量</div></div>
+      <div class="field"><label>新品占比（%）</label><input type="number" id="new_ratio" placeholder="例：11" max="100"></div>
+      <div class="field"><label>退货率（%）</label><input type="number" id="return_rate" placeholder="例：2.96" step="0.01"></div>
+      <div class="field"><label>中国卖家占比（%）</label><input type="number" id="cn_seller" placeholder="例：41" max="100"></div>
+    </div>
+
+    <div class="sec-title">竞争与合规</div>
+    <div class="grid3">
+      <div class="field"><label>亚马逊自营</label><select id="amz_own"><option value="no">无</option><option value="low">有，占比&lt;10%</option><option value="high">有，占比&gt;10%</option></select></div>
+      <div class="field"><label>大品牌垄断</label><select id="brand_dom"><option value="no">无大品牌</option><option value="some">少量大品牌</option><option value="yes">大品牌主导</option></select></div>
+      <div class="field"><label>竞品Listing质量</label><select id="listing_quality"><option value="poor">差（有超越空间）</option><option value="mid">一般</option><option value="good">精良</option></select></div>
+      <div class="field"><label class="warn-label">⚠️ 专利风险</label><select id="patent_risk"><option value="low">低（无明显专利）</option><option value="med">中（有专利需规避）</option><option value="high">高（大量专利+侵权案例）</option></select></div>
+      <div class="field"><label>认证要求</label><select id="cert_req"><option value="none">无特殊认证</option><option value="some">有但可获取</option><option value="hard">认证难度高</option></select></div>
+      <div class="field"><label>产品生命周期</label><select id="lifecycle"><option value="grow">成长期</option><option value="new">新兴期</option><option value="mature">成熟期</option><option value="decline">⚠️ 衰退期</option></select></div>
+    </div>
+
+    <div class="sec-title">爆款潜力</div>
+    <div class="grid3">
+      <div class="field"><label>社媒热度</label><select id="social"><option value="high">TikTok/Pinterest有大量内容</option><option value="mid">有少量内容</option><option value="low">几乎没有</option></select></div>
+      <div class="field"><label>礼品/情感属性</label><select id="gift"><option value="yes">强（送礼/收藏/宠物/健康）</option><option value="some">有一定属性</option><option value="no">无</option></select></div>
+      <div class="field"><label>节日营销机会</label><select id="holiday"><option value="yes">有明确节日旺季</option><option value="some">轻微季节性</option><option value="no">全年均衡</option></select></div>
+      <div class="field"><label>可防御性</label><select id="moat"><option value="high">强（可申请专利）</option><option value="mid">中（需要时间模仿）</option><option value="low">弱（容易复制）</option></select></div>
+      <div class="field"><label>产品重量</label><select id="weight"><option value="light">轻小件（&lt;500g）</option><option value="mid">中等（500g-2kg）</option><option value="heavy">重货（&gt;2kg）</option></select></div>
+      <div class="field"><label>Google Trends趋势</label><select id="trends"><option value="up">持续上升</option><option value="stable">稳定</option><option value="season">季节性波动</option><option value="down">下降</option></select></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: Competitor Deep Dive -->
+  <div class="tab-content" id="tab1">
+    <div class="sec-title">TOP3竞品对比</div>
+    <table class="comp-table">
+      <tr><th width="18%">字段</th><th>竞品A</th><th>竞品B</th><th>竞品C</th></tr>
+      <tr><td>ASIN</td><td><input id="c_asin_a" placeholder="B0XXXXXXX"></td><td><input id="c_asin_b" placeholder="B0XXXXXXX"></td><td><input id="c_asin_c" placeholder="B0XXXXXXX"></td></tr>
+      <tr><td>月销量（单）</td><td><input type="number" id="c_sales_a" placeholder="45245"></td><td><input type="number" id="c_sales_b" placeholder="17547"></td><td><input type="number" id="c_sales_c" placeholder="9481"></td></tr>
+      <tr><td>售价（$）</td><td><input type="number" id="c_price_a" step="0.01" placeholder="18.98"></td><td><input type="number" id="c_price_b" step="0.01" placeholder="19.99"></td><td><input type="number" id="c_price_c" step="0.01" placeholder="15.99"></td></tr>
+      <tr><td>Review数</td><td><input type="number" id="c_review_a" placeholder="5284"></td><td><input type="number" id="c_review_b" placeholder="10140"></td><td><input type="number" id="c_review_c" placeholder="1883"></td></tr>
+      <tr><td>评分</td><td><input type="number" id="c_rating_a" step="0.1" placeholder="4.6"></td><td><input type="number" id="c_rating_b" step="0.1" placeholder="4.6"></td><td><input type="number" id="c_rating_c" step="0.1" placeholder="4.7"></td></tr>
+      <tr><td>变体数量</td><td><input type="number" id="c_variants_a" placeholder="6"></td><td><input type="number" id="c_variants_b" placeholder="11"></td><td><input type="number" id="c_variants_c" placeholder="4"></td></tr>
+      <tr><td>广告CPC（$）</td><td><input type="number" id="c_cpc_a" step="0.01" placeholder="5.76"></td><td><input type="number" id="c_cpc_b" step="0.01" placeholder="6.34"></td><td><input type="number" id="c_cpc_c" step="0.01" placeholder="8.12"></td></tr>
+      <tr><td>上架时间</td><td><input id="c_age_a" placeholder="1年2个月"></td><td><input id="c_age_b" placeholder="3年2个月"></td><td><input id="c_age_c" placeholder="1年11个月"></td></tr>
+      <tr><td>是否有A+</td><td><select id="c_aplus_a"><option value="yes">有</option><option value="no">无</option></select></td><td><select id="c_aplus_b"><option value="yes">有</option><option value="no">无</option></select></td><td><select id="c_aplus_c"><option value="yes">有</option><option value="no">无</option></select></td></tr>
+    </table>
+    <div class="hint">数据来源：卖家精灵Listing分析 / 亚马逊产品页面</div>
+
+    <div class="sec-title" style="margin-top:24px;">竞品Listing质量备注</div>
+    <div class="field">
+      <label>三个竞品的Listing优劣势（标题布局/主图质量/A+内容等）</label>
+      <textarea id="comp_listing_notes" placeholder="例：竞品A标题未突出品牌，主图清晰但场景图较少；竞品B变体最多，A+做得最好；竞品C包装有问题导致差评..."></textarea>
+    </div>
+  </div>
+
+  <!-- TAB 2: Keywords -->
+  <div class="tab-content" id="tab2">
+    <div class="sec-title">关键词数据</div>
+    <div class="grid2">
+      <div class="field"><label>核心大词（含月搜索量）</label><textarea id="kw_core" placeholder="例：hummingbird feeder（615,203）/ hummingbird feeders for outdoors（820,498）" style="min-height:70px;"></textarea></div>
+      <div class="field"><label>核心词排名难度SPR</label><input type="number" id="kw_spr" placeholder="例：2353"><div class="hint">卖家精灵关键词工具，越高越难</div></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>中长尾词（含月搜索量）</label><textarea id="kw_mid" placeholder="例：hummingbird feeders（81,132）/ humming bird feeder（50,228）" style="min-height:70px;"></textarea></div>
+      <div class="field"><label>精准长尾词（差异化相关）</label><textarea id="kw_long" placeholder="例：hummingbird feeder no bees / rust proof / easy to clean" style="min-height:70px;"></textarea></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>核心词购买率（%）</label><input type="number" id="kw_purchase_rate" step="0.01" placeholder="例：16.85"><div class="hint">月购买量÷月搜索量</div></div>
+      <div class="field"><label>广告竞价CPC区间（$）</label><input type="text" id="kw_cpc_range" placeholder="例：0.92-1.66"></div>
+      <div class="field"><label>长尾词数量估算</label><input type="number" id="kw_longtail_count" placeholder="例：20"></div>
+    </div>
+    <div class="field" style="margin-top:8px;">
+      <label>关键词布局建议</label>
+      <textarea id="kw_layout" placeholder="例：核心大词+防锈/防蜜蜂卖点放标题；中长尾词放五点；精准长尾词放后台Search Terms"></textarea>
+    </div>
+  </div>
+
+  <!-- TAB 3: Profit & Funding -->
+  <div class="tab-content" id="tab3">
+    <div class="sec-title">利润测算（⚠️ 利润为负触发一票否决）</div>
+    <div class="grid3">
+      <div class="field"><label>目标售价（$）</label><input type="number" id="price" placeholder="例：21.99" step="0.01"></div>
+      <div class="field"><label>采购成本（$）</label><input type="number" id="cogs" placeholder="例：4.5" step="0.01"></div>
+      <div class="field"><label>头程运费（$）</label><input type="number" id="shipping" placeholder="例：1.5" step="0.01"></div>
+      <div class="field"><label>FBA费用（$）</label><input type="number" id="fba_fee" placeholder="例：2.5" step="0.01"></div>
+      <div class="field"><label>平台佣金（%）</label><input type="number" id="commission" value="15"></div>
+      <div class="field"><label>广告费占比（%）</label><input type="number" id="ads_pct" value="15"></div>
+    </div>
+
+    <div class="sec-title">资金规划</div>
+    <div class="grid3">
+      <div class="field"><label>首批备货数量（件）</label><input type="number" id="fund_qty" placeholder="例：100"></div>
+      <div class="field"><label>头程方式</label><select id="fund_shipping_mode"><option value="air">空运（约45天周期）</option><option value="sea">海运（约90天周期）</option></select></div>
+      <div class="field"><label>预计月销量-保守（单）</label><input type="number" id="fund_sales_low" placeholder="例：200"></div>
+      <div class="field"><label>预计月销量-正常（单）</label><input type="number" id="fund_sales_mid" placeholder="例：400"></div>
+      <div class="field"><label>预计月销量-乐观（单）</label><input type="number" id="fund_sales_high" placeholder="例：800"></div>
+      <div class="field"><label>是否需要开模</label><select id="fund_mold"><option value="no">不需要</option><option value="yes">需要（增加一次性成本）</option></select></div>
+    </div>
+    <div class="field" style="margin-top:8px;" id="fund_mold_cost_field" style="display:none;">
+      <label>开模费用（$）</label><input type="number" id="fund_mold_cost" placeholder="例：800">
+    </div>
+  </div>
+
+  <!-- TAB 4: Listing Plan -->
+  <div class="tab-content" id="tab4">
+    <div class="sec-title">Listing规划</div>
+    <div class="grid2">
+      <div class="field"><label>目标主关键词（标题用）</label><input type="text" id="listing_main_kw" placeholder="例：Hummingbird Feeder for Outdoors"></div>
+      <div class="field"><label>是否需要品牌备案</label><select id="listing_brand_reg"><option value="yes">是，计划做品牌备案</option><option value="no">否，暂不备案</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>变体规划（颜色/尺寸/容量）</label><textarea id="listing_variants" placeholder="例：①颜色：红/橙/紫 ②功能：标准款/防蜜蜂款/大容量款 ③材质：普通款/防锈升级款" style="min-height:80px;"></textarea></div>
+      <div class="field"><label>主图风格方向</label><textarea id="listing_image_style" placeholder="例：白底产品图+使用场景图（蜂鸟饮水画面）+尺寸对比图+材质细节图" style="min-height:80px;"></textarea></div>
+    </div>
+    <div class="field">
+      <label>核心差异化卖点（3-5个，将自动结合评论分析结果）</label>
+      <textarea id="listing_diff" placeholder="例：①304不锈钢防锈配件 ②缩小孔径防蜜蜂设计 ③顶部补充口无需倾倒 ④真实容量标注+尺寸对比图" style="min-height:80px;"></textarea>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>A+页面规划</label><textarea id="listing_aplus" placeholder="例：模块1品牌故事，模块2三大卖点图文，模块3使用场景，模块4尺寸细节，模块5其他产品推荐" style="min-height:70px;"></textarea></div>
+      <div class="field"><label>定价策略</label><textarea id="listing_pricing" placeholder="例：定价$21.99，比竞品A($18.98)高约16%，差异化卖点支撑溢价空间" style="min-height:70px;"></textarea></div>
+    </div>
+  </div>
+
+  <!-- TAB 5: Risk & Reviews -->
+  <div class="tab-content" id="tab5">
+    <div class="sec-title">风险评估</div>
+    <div class="grid2">
+      <div class="field"><label>近期是否有竞品大规模促销</label><select id="risk_promo"><option value="no">无</option><option value="yes">有，需关注价格战风险</option></select></div>
+      <div class="field"><label>原材料价格稳定性</label><select id="risk_material"><option value="stable">稳定</option><option value="volatile">波动较大</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>供应商依赖程度</label><select id="risk_supplier"><option value="multi">有多家备选供应商</option><option value="single">依赖单一供应商</option></select></div>
+      <div class="field"><label>旺季/淡季销量差距比例</label><input type="text" id="risk_seasonality_ratio" placeholder="例：旺季是淡季的3-5倍"></div>
+    </div>
+    <div class="field">
+      <label>其他风险备注</label>
+      <textarea id="risk_notes" placeholder="例：蜂鸟喂食器类目存在外观专利风险，需在入场前完成专利查询..." style="min-height:60px;"></textarea>
+    </div>
+
+    <div class="sec-title">竞品评论分析</div>
+    <div class="field">
+      <label>粘贴竞品1-2星差评原文（越多越准确，建议10条以上，支持中英文）</label>
+      <textarea id="reviews" placeholder="例：
+★☆☆☆☆ 一周内生锈 — 我用这个喂鸟器一周了，遇到过一次雨，它已经生锈了。
+★★☆☆☆ 必须倾倒补充 — 这个喂食器要求你倾倒整个喂食器来补充托盘。
+★☆☆☆☆ 随机碎玻璃！— 包裹里有锋利的碎玻璃碎片。
+...（粘贴更多差评）" style="min-height:130px;"></textarea>
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label>好评亮点（可选，3-5条好评）</label>
+      <textarea id="pos_reviews" placeholder="例：外观漂亮，蜂鸟很喜欢，安装简单..." style="min-height:60px;"></textarea>
+    </div>
+
+    <button class="btn" onclick="generateSelectionKeywords()" style="margin-top:16px;">🔑 分析评论，生成选品关键词 →</button>
+    <div id="title-kw-output" style="display:none;margin-top:14px;"></div>
+  </div>
+
+  <!-- TAB 6: Product Scoring -->
+  <div class="tab-content" id="tab6">
+    <div class="sec-title">商品打分系统</div>
+    <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.7;">根据选品报告的差异化要求，对候选产品进行100分制评分。<br>将Alibaba国际版产品链接粘贴进来，我会自动抓取信息并打分，选出最高分产品。</p>
+
+    <div id="product-slots">
+      <div class="product-slot" id="slot-1">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="font-size:13px;font-weight:600;color:#1a4a7a;min-width:60px;">产品 1</div>
+          <input type="text" id="url-1" placeholder="粘贴Alibaba产品链接 https://www.alibaba.com/product-detail/..." style="flex:1;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;">
+        </div>
+        <div class="field">
+          <label>补充信息（可选，从产品页面复制关键参数）</label>
+          <textarea id="info-1" placeholder="例：304不锈钢，黑色可定制，MOQ 100件，$3.5/件，供应商5年，评分4.9，有FDA证书，支持OEM..." style="min-height:70px;"></textarea>
+        </div>
+        <div id="score-result-1" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="addSlot()" style="padding:8px 16px;background:white;border:1px solid #ddd;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;">+ 添加产品</button>
+      <button onclick="removeSlot()" style="padding:8px 16px;background:white;border:1px solid #ddd;border-radius:6px;font-size:13px;cursor:pointer;font-family:inherit;">- 删除最后一个</button>
+    </div>
+
+    <button class="btn" onclick="scoreAllProducts()" style="margin-top:16px;">开始打分，选出最优产品 →</button>
+
+    <div id="scoring-output" style="display:none;margin-top:1.5rem;"></div>
+  </div>
+
+  <button class="btn" id="btn-analyze" onclick="runFullAnalysis()">开始完整分析 →</button>
+
+  <div id="output" class="result-wrap"></div>
+</div>
+
+<script>
+const FLOW_STEPS=[
+  '📍 第1步：填写市场数据 → AI判断是否值得入场',
+  '📍 第2步：补充竞品深度数据，提高判断准确度',
+  '📍 第3步：补充关键词数据，用于生成选品关键词',
+  '📍 第4步：填写利润与资金，确认入场成本',
+  '📍 第5步：规划Listing差异化方向',
+  '📍 第6步：粘贴竞品差评 → AI生成选品关键词',
+  '📍 第7步：用关键词去Alibaba选品，粘贴链接打分'
+];
+
+function switchTab(idx,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab'+idx).classList.add('active');
+  var statusEl=document.getElementById('flow-status');
+  if(statusEl) statusEl.textContent=FLOW_STEPS[idx]||'';
+  var fillEl=document.getElementById('progress-fill');
+  if(fillEl) fillEl.style.width=Math.round((idx+1)/7*100)+'%';
+}
+
+function g(id){return document.getElementById(id);}
+
+// ==================== HISTORY (localStorage) ====================
+var ALL_FIELD_IDS=['product_name','market','search_vol','amz_results','total_sales','avg_price','avg_review','concentration','new_ratio','return_rate','cn_seller','amz_own','brand_dom','listing_quality','patent_risk','cert_req','lifecycle','social','gift','holiday','moat','weight','trends','price','cogs','shipping','fba_fee','commission','ads_pct','fund_qty','fund_shipping_mode','fund_sales_low','fund_sales_mid','fund_sales_high','fund_mold','fund_mold_cost','kw_core','kw_mid','kw_long','kw_spr','kw_purchase_rate','kw_cpc_range','kw_longtail_count','kw_layout','listing_main_kw','listing_brand_reg','listing_variants','listing_image_style','listing_diff','listing_aplus','listing_pricing','reviews','pos_reviews','risk_notes','risk_promo','risk_material','risk_supplier','risk_seasonality_ratio','c_asin_a','c_sales_a','c_price_a','c_review_a','c_rating_a','c_variants_a','c_cpc_a','c_age_a','c_aplus_a','c_asin_b','c_sales_b','c_price_b','c_review_b','c_rating_b','c_variants_b','c_cpc_b','c_age_b','c_aplus_b','c_asin_c','c_sales_c','c_price_c','c_review_c','c_rating_c','c_variants_c','c_cpc_c','c_age_c','c_aplus_c','comp_listing_notes'];
+
+function saveToHistory(){
+  var name=g('product_name').value.trim();
+  if(!name){alert('请先填写产品名称再保存');return;}
+  var data={};
+  ALL_FIELD_IDS.forEach(function(id){
+    var el=g(id);
+    if(el) data[id]=el.value;
+  });
+  var record={name:name,date:new Date().toLocaleString('zh-CN'),data:data};
+  try{
+    var history=JSON.parse(localStorage.getItem('product_selection_history')||'[]');
+    history.unshift(record);
+    if(history.length>20) history=history.slice(0,20);
+    localStorage.setItem('product_selection_history',JSON.stringify(history));
+    alert('已保存「'+name+'」到历史记录');
+  }catch(e){
+    alert('保存失败：浏览器存储空间可能不足');
+  }
+}
+
+function showHistory(){
+  var panel=g('history-panel');
+  if(panel.style.display==='block'){panel.style.display='none';return;}
+  var history=[];
+  try{history=JSON.parse(localStorage.getItem('product_selection_history')||'[]');}catch(e){}
+
+  if(history.length===0){
+    panel.innerHTML='<div style="font-size:13px;color:#888;text-align:center;padding:10px;">暂无历史记录</div>';
+  }else{
+    var html='<div style="font-size:13px;font-weight:600;color:#444;margin-bottom:10px;">历史记录（最近'+history.length+'条）</div>';
+    history.forEach(function(rec,idx){
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #ddd;">'+
+        '<div><span style="font-size:13px;font-weight:500;">'+rec.name+'</span><span style="font-size:11px;color:#999;margin-left:8px;">'+rec.date+'</span></div>'+
+        '<div><button onclick="loadHistoryItem('+idx+')" style="padding:4px 10px;font-size:12px;background:white;border:1px solid #ddd;border-radius:5px;cursor:pointer;font-family:inherit;margin-right:4px;">加载</button>'+
+        '<button onclick="deleteHistoryItem('+idx+')" style="padding:4px 10px;font-size:12px;background:white;border:1px solid #f0b0a0;color:#c0200a;border-radius:5px;cursor:pointer;font-family:inherit;">删除</button></div>'+
+        '</div>';
+    });
+    panel.innerHTML=html;
+  }
+  panel.style.display='block';
+}
+
+function loadHistoryItem(idx){
+  try{
+    var history=JSON.parse(localStorage.getItem('product_selection_history')||'[]');
+    var rec=history[idx];
+    if(!rec)return;
+    Object.keys(rec.data).forEach(function(id){
+      var el=g(id);
+      if(el) el.value=rec.data[id];
+    });
+    g('history-panel').style.display='none';
+    alert('已加载「'+rec.name+'」的历史数据');
+  }catch(e){alert('加载失败');}
+}
+
+function deleteHistoryItem(idx){
+  try{
+    var history=JSON.parse(localStorage.getItem('product_selection_history')||'[]');
+    history.splice(idx,1);
+    localStorage.setItem('product_selection_history',JSON.stringify(history));
+    showHistory();showHistory();
+  }catch(e){}
+}
+
+
+document.addEventListener('DOMContentLoaded',function(){
+  const moldSel=g('fund_mold');
+  if(moldSel){
+    moldSel.addEventListener('change',function(){
+      g('fund_mold_cost_field').style.display=this.value==='yes'?'flex':'none';
+    });
+  }
+});
+
+const WEIGHTS={市场需求:15,竞争强度:12,利润空间:15,季节性:6,专利合规:12,供应链:6,差异化空间:10,爆款潜力:8,市场时机:6,可防御性:5,资金效率:5,相似款数量:8};
+const MAX_W=Object.values(WEIGHTS).reduce((a,b)=>a+b,0)*10;
+
+function calcProfit(){
+  const p=parseFloat(g('price').value)||0,c=parseFloat(g('cogs').value)||0,s=parseFloat(g('shipping').value)||0,f=parseFloat(g('fba_fee').value)||0;
+  const com=(parseFloat(g('commission').value)||15)/100,ads=(parseFloat(g('ads_pct').value)||15)/100;
+  if(!p)return null;
+  const total=c+s+f+(p*com)+(p*ads)+(p*0.02);
+  return{net:p-total,margin:(p-total)/p*100,price:p,totalCost:total};
+}
+function gc(s){return s>=8?'#1a6b44':s>=6?'#b07010':'#c0200a';}
+function gbc(s){return s>=8?'#1D9E75':s>=6?'#BA7517':'#E24B4A';}
+
+function calcScores(){
+  const v=parseInt(g('search_vol').value)||0,amzRes=parseInt(g('amz_results').value)||0,ts=parseInt(g('total_sales').value)||0;
+  const ar=parseInt(g('avg_review').value)||0,conc=parseFloat(g('concentration').value)||50,nr=parseFloat(g('new_ratio').value)||10;
+  const rr=parseFloat(g('return_rate').value)||5,cn=parseFloat(g('cn_seller').value)||50;
+  const amz=g('amz_own').value,brand=g('brand_dom').value,patent=g('patent_risk').value,cert=g('cert_req').value;
+  const lq=g('listing_quality').value,lifecycle=g('lifecycle').value,social=g('social').value;
+  const gift=g('gift').value,holiday=g('holiday').value,moat=g('moat').value,weight=g('weight').value,trends=g('trends').value;
+  const profit=calcProfit();
+
+  let raw={};
+  let d=v>500000?10:v>200000?9:v>100000?8:v>50000?7:v>20000?6:v>5000?5:3;
+  if(ts>500000)d=Math.min(10,d+1);raw['市场需求']=d;
+
+  let c2=ar<100?10:ar<200?9:ar<500?7:ar<1000?5:ar<3000?3:1;
+  if(conc<40)c2=Math.min(10,c2+1);else if(conc>70)c2=Math.max(1,c2-2);
+  if(nr>20)c2=Math.min(10,c2+1);else if(nr<10)c2=Math.max(1,c2-1);
+  if(amz==='high')c2=Math.max(1,c2-3);else if(amz==='low')c2=Math.max(1,c2-1);
+  if(brand==='yes')c2=Math.max(1,c2-2);else if(brand==='some')c2=Math.max(1,c2-1);
+  raw['竞争强度']=Math.min(10,Math.max(1,Math.round(c2)));
+
+  let p3=5;if(profit){const m=profit.margin;p3=m>=35?10:m>=28?9:m>=25?8:m>=20?6:m>=15?4:m>=10?2:1;}
+  raw['利润空间']=Math.min(10,p3);
+  raw['季节性']=holiday==='no'?9:holiday==='some'?7:5;
+  let pat=patent==='low'?9:patent==='med'?4:1;if(cert==='none')pat=Math.min(10,pat+1);else if(cert==='hard')pat=Math.max(1,pat-2);
+  raw['专利合规']=Math.min(10,Math.max(1,pat));
+  let sup=weight==='light'?9:weight==='mid'?7:5;if(rr<3)sup=Math.min(10,sup+1);else if(rr>8)sup=Math.max(1,sup-2);
+  raw['供应链']=Math.min(10,Math.max(1,sup));
+  let dif=lq==='poor'?8:lq==='mid'?6:4;raw['差异化空间']=Math.min(10,dif);
+  let exp=5;if(social==='high')exp+=2;else if(social==='mid')exp+=1;if(gift==='yes')exp+=2;else if(gift==='some')exp+=1;if(trends==='up')exp+=2;else if(trends==='down')exp-=3;
+  raw['爆款潜力']=Math.min(10,Math.max(1,exp));
+  let mt=lifecycle==='grow'?9:lifecycle==='new'?8:lifecycle==='mature'?6:2;if(trends==='up')mt=Math.min(10,mt+1);else if(trends==='down')mt=Math.max(1,mt-2);
+  raw['市场时机']=Math.min(10,mt);
+  raw['可防御性']=moat==='high'?9:moat==='mid'?6:3;
+  let cap=weight==='light'?9:weight==='mid'?7:4;if(rr<3)cap=Math.min(10,cap+1);raw['资金效率']=Math.min(10,cap);
+  let sim2=amzRes===0?5:amzRes<500?10:amzRes<1000?8:amzRes<2000?6:amzRes<5000?4:2;raw['相似款数量']=sim2;
+
+  let weighted={},total=0;
+  for(const[k,v2]of Object.entries(raw)){weighted[k]=raw[k]*WEIGHTS[k];total+=weighted[k];}
+  const pct=Math.round(total/MAX_W*100);
+
+  const vetos=[];
+  if(patent==='high')vetos.push({title:'专利风险一票否决',desc:'存在大量专利且有侵权案例，必须完成专利规避设计后才能入场。'});
+  if(profit&&profit.margin<0)vetos.push({title:'利润为负一票否决',desc:`每单亏损$${Math.abs(profit.net).toFixed(2)}，必须优化成本或提高售价。`});
+  if(lifecycle==='decline')vetos.push({title:'产品衰退期警告',desc:'市场需求持续下滑，不建议入场。'});
+  if(amz==='high')vetos.push({title:'亚马逊自营高占比警告',desc:'平台优先推自营，第三方卖家生存空间极小。'});
+
+  return{raw,weighted,total,pct,vetos,profit};
+}
+
+function calcFunding(profit){
+  const qty=parseInt(g('fund_qty').value)||0;
+  const shipMode=g('fund_shipping_mode').value;
+  const salesLow=parseInt(g('fund_sales_low').value)||0;
+  const salesMid=parseInt(g('fund_sales_mid').value)||0;
+  const salesHigh=parseInt(g('fund_sales_high').value)||0;
+  const moldNeeded=g('fund_mold').value==='yes';
+  const moldCost=parseFloat(g('fund_mold_cost').value)||0;
+
+  if(!qty||!profit)return null;
+
+  const unitCost=profit.totalCost-profit.price+profit.price; // = cost components before margin; actually need cogs+shipping+fba only for capital
+  const cogs=parseFloat(g('cogs').value)||0;
+  const shipping=parseFloat(g('shipping').value)||0;
+  const fba=parseFloat(g('fba_fee').value)||0;
+  const unitCapital=cogs+shipping; // capital tied up before sale (FBA fee charged at sale time typically)
+  let totalCapital=unitCapital*qty;
+  if(moldNeeded)totalCapital+=moldCost;
+
+  const cycleDays=shipMode==='air'?45:90;
+  const cyclesPerYear=Math.floor(365/cycleDays);
+
+  // breakeven units
+  const breakeven=profit.net>0?Math.ceil(totalCapital/profit.net):null;
+
+  // payback days for each scenario
+  const paybackDays={};
+  [['低',salesLow],['中',salesMid],['高',salesHigh]].forEach(([label,monthlySales])=>{
+    if(monthlySales>0&&profit.net>0){
+      const dailyProfit=monthlySales/30*profit.net;
+      const daysToBreakeven=totalCapital/dailyProfit;
+      paybackDays[label]=Math.ceil(cycleDays+Math.max(0,daysToBreakeven-cycleDays));
+    }else{
+      paybackDays[label]=null;
+    }
+  });
+
+  // annual ROI based on mid scenario
+  let annualROI=null;
+  if(salesMid>0&&profit.net>0){
+    const cycleProfit=Math.min(salesMid/30*cycleDays,qty)*profit.net; // limited by stock qty per cycle roughly
+    const perCycleROI=cycleProfit/totalCapital;
+    annualROI=perCycleROI*cyclesPerYear*100;
+  }
+
+  return{totalCapital,cycleDays,cyclesPerYear,breakeven,paybackDays,annualROI,qty,salesLow,salesMid,salesHigh,moldNeeded,moldCost};
+}
+
+async function runFullAnalysis(){
+  const name=g('product_name').value.trim();
+  if(!name){alert('请先填写产品名称');switchTab(0,document.querySelector('.tab'));return;}
+  const btn=g('btn-analyze');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>分析中，请稍候...';
+  g('output').innerHTML='<div class="loading"><span class="spinner"></span>正在分析，请稍候...</div>';
+
+  const scores=calcScores();
+  const funding=calcFunding(scores.profit);
+  // Reuse review analysis result if step 6 already generated it
+  const reviewResult=window.__lastReviewResult||null;
+
+  renderFull(name,scores,reviewResult,funding);
+  btn.disabled=false;btn.innerHTML='重新分析 →';
+}
+
+const improveSuggestions={市场需求:'搜索量偏低，建议换更大类目或更高搜索量的细分关键词。',竞争强度:'竞争激烈，需深度差异化或找Review更少的细分子类目。',利润空间:'利润偏低，建议降低采购成本、提高售价$2-3或减轻产品重量。',季节性:'季节性明显，旺季前2个月备货，淡季减少广告预算。',专利合规:'必须先查Google Patents并联系律师评估后入场。',供应链:'建议找2-3家备选工厂，首批少量测款。',差异化空间:'建议深挖竞品差评找改进点，或通过捆绑销售增加价值。',爆款潜力:'建议评估TikTok营销可行性，考虑增加礼品包装。',市场时机:'市场时机不佳，需要更强差异化才能切入成熟市场。',可防御性:'尽快申请外观专利，建立品牌备案。',资金效率:'首批用空运快速测款，控制备货量。',相似款数量:'相似款太多，需寻找更细分子品类或设计足够独特的差异化。'};
+
+function renderFull(name,scores,rr,funding){
+  const{raw,weighted,total,pct,vetos,profit}=scores;
+  const market=g('market').value;
+  const sorted=Object.entries(raw).sort((a,b)=>a[1]-b[1]);
+  const weakest=sorted.slice(0,3).map(x=>x[0]);
+  const risks=[],opps=[];
+  if(raw['专利合规']<=4)risks.push('专利风险高');if(raw['竞争强度']<=3)risks.push('竞争激烈');if(raw['相似款数量']<=4)risks.push('相似款泛滥');if(raw['季节性']<=5)risks.push('季节性明显');
+  if(raw['市场需求']>=8)opps.push('市场需求极大');if(raw['差异化空间']>=8)opps.push('差异化空间充足');if(raw['爆款潜力']>=8)opps.push('爆款潜力强');if(raw['利润空间']>=8)opps.push('利润健康');
+  if(rr&&rr.summary.opportunity_score>=8)opps.push('评论差异化机会大');
+
+  let verdict,vClass;
+  if(vetos.length>0){verdict='一票否决';vClass='b-no';}
+  else if(pct>=75){verdict='建议入场';vClass='b-go';}
+  else if(pct>=55){verdict='条件入场';vClass='b-maybe';}
+  else{verdict='不建议入场';vClass='b-no';}
+
+  let html='';
+
+  if(vetos.length>0){
+    html+=`<div class="veto-box"><h3>⚠️ 触发一票否决 — ${vetos.length}个关键风险</h3>${vetos.map(v=>`<p><strong>${v.title}</strong><br>${v.desc}</p>`).join('')}</div>`;
+  }
+
+  // Header
+  html+=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+      <div><div style="font-size:20px;font-weight:700;">${name}</div><div style="font-size:13px;color:#888;margin-top:3px;">${market} · ${new Date().toLocaleDateString('zh-CN')}</div>
+      <div style="margin-top:10px;">${opps.map(o=>`<span class="tag t-go">${o}</span>`).join('')}${risks.map(r=>`<span class="tag t-risk">${r}</span>`).join('')}</div></div>
+      <div class="total-box"><div class="tl">综合评分</div><div class="tv">${pct}%</div><span class="badge ${vClass}">${verdict}</span></div>
+    </div>
+    <div class="score-grid">
+      ${[['市场需求'],['竞争强度'],['利润空间'],['爆款潜力']].map(([k])=>`<div class="sc"><div class="sl">${k}</div><div class="sv" style="color:${gc(raw[k])}">${raw[k]}/10</div></div>`).join('')}
+      ${rr?`<div class="sc"><div class="sl">评论机会分</div><div class="sv" style="color:${gc(rr.summary.opportunity_score)}">${rr.summary.opportunity_score}/10</div></div>`:''}
+    </div>
+  </div>`;
+
+  // 12 dims
+  html+=`<div class="card"><div class="card-title">📊 12维度加权评分</div>
+    ${Object.entries(raw).map(([k,v2])=>`<div class="dim-row"><span class="dim-name">${k}</span><span class="dim-wt">×${WEIGHTS[k]}</span><div class="bar-wrap"><div class="bar-fill" style="width:${v2*10}%;background:${gbc(v2)};"></div></div><span class="dim-sc" style="color:${gc(v2)}">${v2}/10</span><span class="dim-pts">${weighted[k]}分</span></div>`).join('')}
+    <div style="text-align:right;margin-top:10px;font-size:13px;color:#888;">加权总分：<strong style="color:#1a1a2e;font-size:15px;">${total} / ${MAX_W}</strong></div>
+  </div>`;
+
+  // Competitor comparison
+  const compRows=[];
+  ['a','b','c'].forEach((suf,i)=>{
+    const asin=g('c_asin_'+suf).value;
+    if(asin){
+      compRows.push({
+        label:['竞品A','竞品B','竞品C'][i],
+        asin,
+        sales:g('c_sales_'+suf).value,
+        price:g('c_price_'+suf).value,
+        review:g('c_review_'+suf).value,
+        rating:g('c_rating_'+suf).value,
+        variants:g('c_variants_'+suf).value,
+        cpc:g('c_cpc_'+suf).value,
+        age:g('c_age_'+suf).value,
+        aplus:g('c_aplus_'+suf).value
+      });
+    }
+  });
+  if(compRows.length>0){
+    html+=`<div class="card"><div class="card-title">🔍 竞品深度对比</div>
+      <table class="comp-table" style="font-size:13px;">
+        <tr><th>竞品</th><th>ASIN</th><th>月销量</th><th>售价</th><th>Review</th><th>评分</th><th>变体</th><th>CPC</th><th>上架</th><th>A+</th></tr>
+        ${compRows.map(c=>`<tr><td><strong>${c.label}</strong></td><td>${c.asin||'-'}</td><td>${c.sales||'-'}</td><td>$${c.price||'-'}</td><td>${c.review||'-'}</td><td>${c.rating||'-'}</td><td>${c.variants||'-'}</td><td>$${c.cpc||'-'}</td><td>${c.age||'-'}</td><td>${c.aplus==='yes'?'有':'无'}</td></tr>`).join('')}
+      </table>
+      ${g('comp_listing_notes').value?`<div class="hint" style="margin-top:8px;line-height:1.6;">${g('comp_listing_notes').value}</div>`:''}
+    </div>`;
+  }
+
+  // Keywords
+  const kwCore=g('kw_core').value,kwMid=g('kw_mid').value,kwLong=g('kw_long').value;
+  if(kwCore||kwMid||kwLong){
+    html+=`<div class="card"><div class="card-title">🔑 关键词布局</div>
+      ${kwCore?`<div class="sec-hd">核心大词</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${kwCore}</p>`:''}
+      ${kwMid?`<div class="sec-hd">中长尾词</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${kwMid}</p>`:''}
+      ${kwLong?`<div class="sec-hd">精准长尾词（差异化）</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${kwLong}</p>`:''}
+      <div class="score-grid">
+        ${g('kw_spr').value?`<div class="sc"><div class="sl">排名难度SPR</div><div class="sv">${g('kw_spr').value}</div></div>`:''}
+        ${g('kw_purchase_rate').value?`<div class="sc"><div class="sl">购买率</div><div class="sv">${g('kw_purchase_rate').value}%</div></div>`:''}
+        ${g('kw_cpc_range').value?`<div class="sc"><div class="sl">CPC区间</div><div class="sv" style="font-size:15px;">$${g('kw_cpc_range').value}</div></div>`:''}
+        ${g('kw_longtail_count').value?`<div class="sc"><div class="sl">长尾词数量</div><div class="sv">${g('kw_longtail_count').value}+</div></div>`:''}
+      </div>
+      ${g('kw_layout').value?`<div class="sec-hd">布局建议</div><p style="font-size:13px;color:#444;">${g('kw_layout').value}</p>`:''}
+    </div>`;
+  }
+
+  // Profit
+  if(profit){
+    html+=`<div class="card"><div class="card-title">💰 利润测算</div>
+      <div class="profit-grid">
+        <div class="sc"><div class="sl">售价</div><div class="sv">$${profit.price.toFixed(2)}</div></div>
+        <div class="sc"><div class="sl">总成本</div><div class="sv">$${profit.totalCost.toFixed(2)}</div></div>
+        <div class="sc"><div class="sl">净利润</div><div class="sv" style="color:${profit.net>0?'#1a6b44':'#c0200a'}">$${profit.net.toFixed(2)}</div></div>
+        <div class="sc"><div class="sl">利润率</div><div class="sv" style="color:${profit.margin>=25?'#1a6b44':profit.margin>=15?'#b07010':'#c0200a'}">${profit.margin.toFixed(1)}%</div></div>
+      </div>
+      <p style="font-size:13px;color:#666;">${profit.margin>=25?'✅ 利润率超过25%健康线，利润充足。':profit.margin>=15?'⚠️ 利润率略低于25%健康线，建议通过提价或降低采购成本优化。':profit.margin>=0?'❌ 利润率低于15%，容错空间极小。':'❌ 利润为负，每单亏损，必须优化后才能入场。'}</p>
+    </div>`;
+  }
+
+  // Funding plan
+  if(funding){
+    html+=`<div class="card"><div class="card-title">💵 资金规划</div>
+      <div class="fund-grid">
+        <div class="fund-cell"><div class="fl">首批资金需求</div><div class="fv">$${funding.totalCapital.toFixed(0)}</div></div>
+        <div class="fund-cell"><div class="fl">头程周期</div><div class="fv">${funding.cycleDays}天</div></div>
+        <div class="fund-cell"><div class="fl">年回转次数</div><div class="fv">${funding.cyclesPerYear}次</div></div>
+        ${funding.breakeven?`<div class="fund-cell"><div class="fl">盈亏平衡单量</div><div class="fv">${funding.breakeven}单</div></div>`:''}
+        ${funding.annualROI?`<div class="fund-cell"><div class="fl">预估年化ROI</div><div class="fv">${funding.annualROI.toFixed(0)}%</div></div>`:''}
+      </div>
+      ${funding.moldNeeded?`<p style="font-size:12px;color:#888;margin-top:8px;">含开模费用 $${funding.moldCost.toFixed(0)}（一次性）</p>`:''}
+      <div class="sec-hd" style="margin-top:12px;">三种销量场景回本预估</div>
+      <table class="comp-table" style="font-size:13px;">
+        <tr><th>场景</th><th>预计月销量</th><th>预计回本周期</th></tr>
+        <tr><td>保守</td><td>${funding.salesLow||'-'}单/月</td><td>${funding.paybackDays['低']?funding.paybackDays['低']+'天':'-'}</td></tr>
+        <tr><td>正常</td><td>${funding.salesMid||'-'}单/月</td><td>${funding.paybackDays['中']?funding.paybackDays['中']+'天':'-'}</td></tr>
+        <tr><td>乐观</td><td>${funding.salesHigh||'-'}单/月</td><td>${funding.paybackDays['高']?funding.paybackDays['高']+'天':'-'}</td></tr>
+      </table>
+    </div>`;
+  }
+
+  // Listing plan
+  const lk=g('listing_main_kw').value,lv=g('listing_variants').value,li=g('listing_image_style').value,ld=g('listing_diff').value,la=g('listing_aplus').value,lp=g('listing_pricing').value;
+  if(lk||lv||li||ld){
+    html+=`<div class="card"><div class="card-title">📝 Listing规划</div>
+      ${lk?`<div class="sec-hd">目标主关键词</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${lk}</p>`:''}
+      ${ld?`<div class="sec-hd">核心差异化卖点</div><p style="font-size:13px;color:#444;margin-bottom:10px;line-height:1.7;">${ld}</p>`:''}
+      ${lv?`<div class="sec-hd">变体规划</div><p style="font-size:13px;color:#444;margin-bottom:10px;line-height:1.7;">${lv}</p>`:''}
+      ${li?`<div class="sec-hd">主图风格</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${li}</p>`:''}
+      ${la?`<div class="sec-hd">A+页面规划</div><p style="font-size:13px;color:#444;margin-bottom:10px;">${la}</p>`:''}
+      ${lp?`<div class="sec-hd">定价策略</div><p style="font-size:13px;color:#444;">${lp}</p>`:''}
+      <div class="hint" style="margin-top:8px;">品牌备案：${g('listing_brand_reg').value==='yes'?'计划备案':'暂不备案'}</div>
+    </div>`;
+  }
+
+  // Risk assessment
+  const riskNotes=g('risk_notes').value;
+  const promoRisk=g('risk_promo').value,materialRisk=g('risk_material').value,supplierRisk=g('risk_supplier').value,seasonRatio=g('risk_seasonality_ratio').value;
+  html+=`<div class="card"><div class="card-title">⚠️ 风险评估清单</div>
+    <div class="score-grid">
+      <div class="sc"><div class="sl">竞品促销风险</div><div class="sv" style="font-size:14px;color:${promoRisk==='yes'?'#c0200a':'#1a6b44'}">${promoRisk==='yes'?'有':'无'}</div></div>
+      <div class="sc"><div class="sl">原材料稳定性</div><div class="sv" style="font-size:14px;color:${materialRisk==='volatile'?'#c0200a':'#1a6b44'}">${materialRisk==='volatile'?'波动大':'稳定'}</div></div>
+      <div class="sc"><div class="sl">供应商风险</div><div class="sv" style="font-size:14px;color:${supplierRisk==='single'?'#c0200a':'#1a6b44'}">${supplierRisk==='single'?'单一':'多家'}</div></div>
+    </div>
+    ${seasonRatio?`<p style="font-size:13px;color:#444;margin-top:8px;"><strong>季节性差距：</strong>${seasonRatio}</p>`:''}
+    ${riskNotes?`<p style="font-size:13px;color:#444;margin-top:8px;line-height:1.7;"><strong>其他风险：</strong>${riskNotes}</p>`:''}
+  </div>`;
+
+  // Review analysis
+  if(rr){
+    const maxFreq=Math.max(...rr.issues.map(i=>i.frequency));
+    html+=`<div class="card"><div class="card-title">💬 竞品评论分析</div>
+      ${rr.risk_warning?`<div style="background:#fdecea;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#c0200a;">⚠️ 风险提示：${rr.risk_warning}</div>`:''}
+      <div class="score-grid">
+        <div class="sc"><div class="sl">分析评论数</div><div class="sv">${rr.summary.total_reviews}</div></div>
+        <div class="sc"><div class="sl">问题类别数</div><div class="sv">${rr.summary.main_issues_count}</div></div>
+        <div class="sc"><div class="sl">差异化机会</div><div class="sv" style="color:${gc(rr.summary.opportunity_score)}">${rr.summary.opportunity_score}/10</div></div>
+        <div class="sc"><div class="sl">产品现有质量</div><div class="sv" style="color:${gc(rr.summary.product_score)}">${rr.summary.product_score}/10</div></div>
+      </div>
+      <div class="sec-hd">差评问题分类</div>
+      ${rr.issues.map(issue=>{
+        const bw=Math.round(issue.frequency/maxFreq*100);
+        const sevC=issue.severity==='高'?'#c0200a':issue.severity==='中'?'#b07010':'#1a6b44';
+        const solTag=issue.solution_type==='工厂端'?`<span class="tag t-risk">工厂端</span>`:issue.solution_type==='运营端'?`<span class="tag t-info">运营端</span>`:`<span class="tag t-risk">工厂端</span><span class="tag t-info">运营端</span>`;
+        return`<div class="issue-card">
+          <div class="issue-hd"><strong>${issue.category}</strong><span class="issue-sev" style="color:${sevC};">严重度：${issue.severity} · 出现${issue.frequency}次</span></div>
+          <div class="bar-wrap" style="margin-bottom:8px;"><div class="bar-fill" style="width:${bw}%;background:${gbc(10-issue.frequency)};"></div></div>
+          <div class="issue-desc">${issue.description}</div>
+          <div style="margin-bottom:6px;">${solTag}</div>
+          <div class="issue-sol">${issue.factory_solution?`<div style="color:#c0200a;">工厂端：${issue.factory_solution}</div>`:''}${issue.ops_solution?`<div style="color:#1a4a7a;">运营端：${issue.ops_solution}</div>`:''}</div>
+        </div>`;
+      }).join('')}
+      <div class="sec-hd">差异化卖点（可直接用于Listing五点描述）</div>
+      ${rr.selling_points.map((sp,i)=>`<div class="sp-card"><h4>${i+1}. ${sp.title}</h4><p><strong>中文：</strong>${sp.chinese}</p><p><strong>五点写法：</strong>${sp.listing_copy}</p><p><strong>来源：</strong>${sp.source}</p></div>`).join('')}
+      ${rr.pros&&rr.pros.length?`<div class="sec-hd">好评亮点（需保留的优势）</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${rr.pros.map(p=>`<span class="tag t-go">${p}</span>`).join('')}</div>`:''}
+    </div>`;
+  }
+
+  // Action plan
+  html+=`<div class="card"><div class="card-title">📋 综合行动建议</div>
+    <div class="improve-box"><h4>最需要改进的3个维度</h4>${weakest.map((k,i)=>`<p>${i+1}. <strong>${k}（${raw[k]}/10）</strong> — ${improveSuggestions[k]}</p>`).join('')}</div>
+    <div class="action-box"><h4>入场行动计划</h4>${
+      vetos.length>0?`<p>当前有一票否决风险，优先解决：</p>${vetos.map((v,i)=>`<p>${i+1}. ${v.title.replace('一票否决','').replace('警告','').trim()}</p>`).join('')}`:
+      pct>=75?`<p>综合评分${pct}%，建议入场。</p><p>本周：重点解决${weakest[0]}问题</p><p>下周：联系3家工厂询价，确认改款可行性</p><p>两周内：首批${funding?funding.qty:'100'}件${g('fund_shipping_mode').value==='air'?'空运':'海运'}测款，验证市场反应</p>`:
+      pct>=55?`<p>综合评分${pct}%，有条件可入场。</p><p>先解决${weakest.slice(0,2).join('和')}两个问题</p><p>条件满足后首批少量测款，控制风险</p>`:
+      `<p>综合评分${pct}%，不建议入场。</p><p>主要问题：${weakest.join('、')}评分过低</p><p>建议寻找更好的产品机会</p>`
+    }</div>
+  </div>`;
+
+  g('output').innerHTML=html;
+  g('output').scrollIntoView({behavior:'smooth'});
+}
+
+// ==================== TAB 7 FUNCTIONS ====================
+var slotCount = 1;
+
+function addSlot(){
+  slotCount++;
+  var div = document.createElement('div');
+  div.className = 'product-slot';
+  div.id = 'slot-' + slotCount;
+  div.style.marginTop = '16px';
+  div.style.paddingTop = '16px';
+  div.style.borderTop = '1px solid #eee';
+  div.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+    '<div style="font-size:13px;font-weight:600;color:#1a4a7a;min-width:60px;">产品 ' + slotCount + '</div>' +
+    '<input type="text" id="url-' + slotCount + '" placeholder="粘贴Alibaba产品链接..." style="flex:1;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;">' +
+    '</div>' +
+    '<div class="field"><label>补充信息（可选）</label>' +
+    '<textarea id="info-' + slotCount + '" placeholder="材质、价格、MOQ、供应商年限、认证等..." style="min-height:70px;"></textarea></div>' +
+    '<div id="score-result-' + slotCount + '" style="display:none;"></div>';
+  document.getElementById('product-slots').appendChild(div);
+}
+
+function removeSlot(){
+  if(slotCount <= 1) return;
+  var el = document.getElementById('slot-' + slotCount);
+  if(el) el.remove();
+  slotCount--;
+}
+
+async function scoreAllProducts(){
+  var btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>正在抓取并打分...';
+
+  // Gather real report data for context (no more hardcoded defaults)
+  var targetPrice = parseFloat(g('price').value) || 0;
+  var cogsInput = parseFloat(g('cogs').value) || 0;
+  var profitObj = calcProfit();
+  // Cost ceiling derived from actual filled-in cost structure, not a fixed guess
+  var cogsLimit = cogsInput > 0 ? cogsInput * 1.15 : (targetPrice > 0 ? targetPrice * 0.25 : 6);
+  var profitTargetPct = 25;
+
+  var diffText = g('listing_diff').value || '';
+  var reportData = {
+    product: g('product_name').value || '',
+    diff: diffText,
+    variants: g('listing_variants').value || '',
+    cogs_limit: cogsLimit.toFixed(2),
+    target_price: targetPrice,
+    profit_target: profitTargetPct,
+    kw_core: g('kw_core').value || '',
+    reviews_neg: g('reviews').value || ''
+  };
+
+  // Dynamic weight: if differentiation plan emphasizes material/durability, weight 材质与工艺 higher
+  var materialWeight = 25, diffWeight = 20;
+  var materialKeywords = ['不锈钢','材质','防锈','304','断裂','耐用','厚度','强度','steel','durable','break'];
+  var matchCount = materialKeywords.filter(function(kw){ return diffText.indexOf(kw) !== -1; }).length;
+  if(matchCount >= 2){ materialWeight = 35; diffWeight = 15; }
+  else if(matchCount >= 1){ materialWeight = 30; diffWeight = 17; }
+  var remainingWeight = 100 - materialWeight - diffWeight;
+  var costW = Math.round(remainingWeight * 0.27);
+  var supplierW = Math.round(remainingWeight * 0.27);
+  var customW = Math.round(remainingWeight * 0.18);
+  var moqW = Math.round(remainingWeight * 0.15);
+  var leadW = 100 - materialWeight - diffWeight - costW - supplierW - customW - moqW;
+
+  var products = [];
+  for(var i = 1; i <= slotCount; i++){
+    var url = g('url-' + i) ? g('url-' + i).value.trim() : '';
+    var info = g('info-' + i) ? g('info-' + i).value.trim() : '';
+    if(url || info){
+      products.push({id: i, url: url, info: info});
+    }
+  }
+
+  if(products.length === 0){
+    alert('请至少填写一个产品链接或信息');
+    btn.disabled = false;
+    btn.innerHTML = '开始打分，选出最优产品 →';
+    return;
+  }
+
+  // Calculate info completeness per product (does NOT block scoring, just flags confidence)
+  var completenessKeywords = {
+    price: ['$','￥','价','元','usd','rmb','单价'],
+    material: ['材质','不锈钢','304','201','塑料','硅胶','steel','plastic','silicone'],
+    moq: ['moq','起订','件起','pcs','minimum'],
+    supplier: ['年','评分','rating','years','成立','工厂','factory'],
+    cert: ['认证','证书','fda','ce','rohs','certificate']
+  };
+  function calcCompleteness(text){
+    var t = (text||'').toLowerCase();
+    var hits = 0, total = 0;
+    Object.keys(completenessKeywords).forEach(function(key){
+      total++;
+      var found = completenessKeywords[key].some(function(kw){ return t.indexOf(kw.toLowerCase()) !== -1; });
+      if(found) hits++;
+    });
+    return Math.round(hits/total*100);
+  }
+  products.forEach(function(p){
+    p.completeness = calcCompleteness(p.info);
+  });
+
+  // Fetch page content for each URL
+  var productContents = [];
+  for(var p = 0; p < products.length; p++){
+    var prod = products[p];
+    var content_text = prod.info;
+    if(prod.url && prod.url.startsWith('http')){
+      content_text = '链接：' + prod.url + '\n补充信息：' + prod.info;
+    }
+    var completenessNote = prod.completeness < 40 ?
+      '（⚠️信息完整度仅' + prod.completeness + '%，缺少关键参数，打分时不要假设缺失信息为理想值，应在weaknesses中明确写出"信息不全：缺XX"，对应维度不能给高分）' :
+      '（信息完整度' + prod.completeness + '%）';
+    productContents.push('【产品' + prod.id + '】' + completenessNote + '\n' + content_text);
+  }
+
+  // Build scoring prompt with dynamic weights and explicit price veto rule
+  var prompt = '你是亚马逊选品专家。根据以下选品报告要求，对候选产品进行100分制评分。\n\n' +
+    '【选品要求】\n' +
+    '目标产品：' + reportData.product + '\n' +
+    '核心差异化卖点：' + reportData.diff + '\n' +
+    '变体规划：' + reportData.variants + '\n' +
+    '目标零售价：$' + reportData.target_price + '\n' +
+    '采购成本上限：约$' + reportData.cogs_limit + '（基于报告利润测算反推，超过此价格会导致利润率低于' + profitTargetPct + '%）\n' +
+    '目标利润率：>' + reportData.profit_target + '%\n' +
+    '核心关键词：' + reportData.kw_core + '\n\n' +
+    '【一票否决规则】\n' +
+    '如果某个候选产品的采购单价明显超过成本上限（$' + reportData.cogs_limit + '）导致利润率会跌破10%，该产品"成本与利润"维度直接打0-2分，并在weaknesses中明确标注"采购价超出预算，利润率不达标"。\n\n' +
+    '【信息完整度规则】\n' +
+    '每个产品标注了信息完整度百分比。完整度低于40%的产品，不要替它编造缺失的数据或假设缺失信息是理想状态——对应维度按"未知/保守"处理，不能给高分，并在weaknesses里写清楚缺了什么信息。\n\n' +
+    '【评分维度，权重已根据本次差异化重点动态调整】\n' +
+    '1. 材质与工艺（' + materialWeight + '分）：是否符合材质要求、工艺质量、耐用性\n' +
+    '2. 差异化匹配度（' + diffWeight + '分）：解决了几个差评痛点、卖点匹配度\n' +
+    '3. 成本与利润（' + costW + '分）：采购价是否在预算内、阶梯价格\n' +
+    '4. 供应商资质（' + supplierW + '分）：经营年限、评分、出口经验、认证\n' +
+    '5. 定制能力（' + customW + '分）：支持颜色/Logo/包装定制\n' +
+    '6. 起订量（' + moqW + '分）：100件以内满分，越少越高\n' +
+    '7. 交货周期（' + leadW + '分）：越短越高分\n\n' +
+    '【候选产品信息】\n' +
+    productContents.join('\n\n') + '\n\n' +
+    '请严格按以下JSON格式返回，不要有任何其他文字或markdown符号：\n' +
+    '{"products":[{"id":1,"name":"产品名称","total_score":85,"info_completeness":75,"scores":{"材质与工艺":'+Math.round(materialWeight*0.9)+',"差异化匹配度":'+Math.round(diffWeight*0.9)+',"成本与利润":'+Math.round(costW*0.8)+',"供应商资质":'+Math.round(supplierW*0.85)+',"定制能力":'+Math.round(customW*0.8)+',"起订量":'+Math.round(moqW*0.85)+',"交货周期":'+Math.round(leadW*0.7)+'},"strengths":["优势1","优势2"],"weaknesses":["劣势1"],"recommendation":"简短建议20字内"}],"winner":1,"winner_reason":"选择原因50字内（如果最高分产品信息完整度低，要在原因里提醒需先补充信息验证再下单）"}';
+
+  window.__scoringWeights = {材质与工艺:materialWeight,差异化匹配度:diffWeight,成本与利润:costW,供应商资质:supplierW,定制能力:customW,起订量:moqW,交货周期:leadW};
+
+  // Check for API key
+  var apiKey = g('deepseek_key') ? g('deepseek_key').value.trim() : '';
+
+  try {
+    var response, data, raw;
+    if(apiKey){
+      // Use DeepSeek
+      response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey},
+        body: JSON.stringify({model: 'deepseek-chat', max_tokens: 2000, messages: [{role: 'system', content: '你是亚马逊选品专家，严格按JSON格式返回，不要有任何其他文字。'}, {role: 'user', content: prompt}]})
+      });
+      data = await response.json();
+      raw = data.choices[0].message.content || '';
+    } else {
+      // Use Anthropic
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: 'claude-sonnet-4-6', max_tokens: 2000, messages: [{role: 'user', content: prompt}]})
+      });
+      data = await response.json();
+      raw = data.content.map(function(i){return i.text||'';}).join('');
+    }
+
+    var result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    renderScoringResult(result, products);
+  } catch(e) {
+    document.getElementById('scoring-output').style.display = 'block';
+    document.getElementById('scoring-output').innerHTML = '<div style="background:#fdecea;border-radius:8px;padding:14px;color:#c0200a;font-size:13px;">打分失败：' + e.message + '<br>请确认已填写DeepSeek API Key，或通过本地服务器运行。</div>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '开始打分，选出最优产品 →';
+}
+
+function renderScoringResult(result, products){
+  var output = document.getElementById('scoring-output');
+  output.style.display = 'block';
+
+  var dims = ['材质与工艺','差异化匹配度','成本与利润','供应商资质','定制能力','起订量','交货周期'];
+  var maxScores = window.__scoringWeights || {'材质与工艺':25,'差异化匹配度':20,'成本与利润':15,'供应商资质':15,'定制能力':10,'起订量':8,'交货周期':7};
+  var colors = ['#1D9E75','#378ADD','#BA7517','#E24B4A','#7F77DD','#D4537E','#639922'];
+
+  var html = '<div class="card">';
+  html += '<div class="card-title">🏆 打分结果</div>';
+  html += '<div style="font-size:12px;color:#888;margin-bottom:12px;">评分权重已根据你填写的差异化方向动态调整（材质相关权重越高，说明该项是本次选品的核心关注点）</div>';
+
+  // Winner banner
+  var winner = result.products.find(function(p){return p.id === result.winner;});
+  if(winner){
+    var winnerComp = winner.info_completeness;
+    var compBadge = '';
+    if(typeof winnerComp === 'number'){
+      var cc = winnerComp>=70?'#1a6b44':winnerComp>=40?'#b07010':'#c0200a';
+      var cbg = winnerComp>=70?'#e8f5ee':winnerComp>=40?'#fdf5e0':'#fdecea';
+      compBadge = '<span style="background:'+cbg+';color:'+cc+';font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;">信息完整度'+winnerComp+'%</span>';
+    }
+    html += '<div style="background:#e8f5ee;border:1.5px solid #b0d8c0;border-radius:10px;padding:16px;margin-bottom:16px;">';
+    html += '<div style="font-size:14px;font-weight:700;color:#1a6b44;margin-bottom:6px;">🥇 最优产品：' + winner.name + compBadge + '</div>';
+    html += '<div style="font-size:13px;color:#1a6b44;margin-bottom:8px;">' + result.winner_reason + '</div>';
+    html += '<div style="font-size:28px;font-weight:700;color:#1a6b44;">综合评分：' + winner.total_score + '/100</div>';
+    if(typeof winnerComp === 'number' && winnerComp < 40){
+      html += '<div style="font-size:12px;color:#c0200a;margin-top:8px;">⚠️ 该产品信息完整度较低，这个分数还不够可靠，建议先联系供应商补充材质/价格/MOQ/资质信息后再下单。</div>';
+    }
+    html += '</div>';
+  }
+
+  // All products comparison
+  html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  html += '<tr><th style="text-align:left;padding:8px;background:#f8f6f2;border-bottom:1px solid #ddd;">评分维度</th>';
+  result.products.forEach(function(p){
+    html += '<th style="text-align:center;padding:8px;background:' + (p.id===result.winner?'#e8f5ee':'#f8f6f2') + ';border-bottom:1px solid #ddd;">' +
+      (p.id===result.winner?'🥇 ':'') + p.name + '</th>';
+  });
+  html += '</tr>';
+
+  dims.forEach(function(dim, idx){
+    html += '<tr>';
+    html += '<td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:12px;color:#444;">' + dim + '<span style="color:#aaa;margin-left:4px;">(/' + maxScores[dim] + ')</span></td>';
+    result.products.forEach(function(p){
+      var score = p.scores[dim] || 0;
+      var pct = Math.round(score/maxScores[dim]*100);
+      var color = pct>=80?'#1a6b44':pct>=60?'#b07010':'#c0200a';
+      html += '<td style="text-align:center;padding:7px 8px;border-bottom:1px solid #eee;">' +
+        '<div style="font-weight:600;color:' + color + ';font-size:13px;">' + score + '</div>' +
+        '<div style="height:4px;background:#eee;border-radius:2px;margin-top:3px;overflow:hidden;">' +
+        '<div style="width:' + pct + '%;height:100%;background:' + colors[idx] + ';border-radius:2px;"></div></div>' +
+        '</td>';
+    });
+    html += '</tr>';
+  });
+
+  // Total row
+  html += '<tr style="background:#f8f6f2;">';
+  html += '<td style="padding:10px 8px;font-weight:700;font-size:13px;">综合总分</td>';
+  result.products.forEach(function(p){
+    var isWinner = p.id === result.winner;
+    html += '<td style="text-align:center;padding:10px 8px;font-weight:700;font-size:18px;color:' + (isWinner?'#1a6b44':'#444') + ';">' +
+      p.total_score + '/100' + (isWinner?' 🥇':'') + '</td>';
+  });
+  html += '</tr></table></div>';
+
+  // Individual analysis
+  html += '<div style="margin-top:16px;">';
+  result.products.forEach(function(p){
+    var isWinner = p.id === result.winner;
+    html += '<div style="background:' + (isWinner?'#e8f5ee':'#f8f6f2') + ';border-radius:8px;padding:12px 14px;margin-bottom:10px;">';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">' + (isWinner?'🥇 ':'') + p.name + ' — ' + p.total_score + '分</div>';
+    if(p.strengths && p.strengths.length){
+      html += '<div style="font-size:12px;color:#1a6b44;margin-bottom:4px;">✅ ' + p.strengths.join(' / ') + '</div>';
+    }
+    if(p.weaknesses && p.weaknesses.length){
+      html += '<div style="font-size:12px;color:#c0200a;margin-bottom:4px;">⚠️ ' + p.weaknesses.join(' / ') + '</div>';
+    }
+    html += '<div style="font-size:12px;color:#666;">' + p.recommendation + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '</div>';
+
+  output.innerHTML = html;
+  output.scrollIntoView({behavior:'smooth'});
+}
+
+// ==================== STEP 6: SELECTION KEYWORD GENERATOR ====================
+async function generateSelectionKeywords(){
+  var apiKey=g('deepseek_key').value.trim();
+  if(!apiKey){alert('请先填写顶部的DeepSeek API Key');return;}
+  var reviews=g('reviews').value.trim();
+  if(!reviews||reviews.length<50){alert('请先粘贴竞品差评内容（至少50字）');return;}
+
+  // Pre-call sanity check: rough review count estimate via star-rating markers, to catch obviously insufficient input before spending an API call
+  var starMatches=reviews.match(/[★☆]{3,5}|⭐|[1-5]\s*星|[1-5]\s*stars?/gi)||[];
+  var roughCount=Math.max(starMatches.length, reviews.split(/\n\s*\n/).filter(function(p){return p.trim().length>15;}).length);
+  if(roughCount>0 && roughCount<8){
+    var proceed=confirm('检测到大约只有'+roughCount+'条差评，远低于30条的可信门槛，现在生成的差异化方向参考价值会很低。\n\n仍要继续吗？（建议先取消，去收集更多差评）');
+    if(!proceed) return;
+  }
+
+  var btn=event.target;
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>AI分析评论，生成关键词中...';
+
+  var name=g('product_name').value||'未填写产品';
+  var posReviews=g('pos_reviews').value.trim();
+  var diffPlanned=g('listing_diff').value.trim();
+  var kwCore=g('kw_core').value.trim();
+
+  var prompt='你是亚马逊运营专家，分析竞品评论找差异化机会，并生成1688/Alibaba选品搜索关键词。产品：'+name+'\n\n'+
+    '差评原文：\n'+reviews+'\n\n'+
+    (posReviews?'好评：\n'+posReviews+'\n\n':'')+
+    (diffPlanned?'已规划的差异化方向：'+diffPlanned+'\n\n':'')+
+    (kwCore?'核心市场关键词：'+kwCore+'\n\n':'')+
+    '请仔细数出输入中实际包含的独立评论条数（total_reviews），以及这些评论来自几个不同的竞品/来源（distinct_sources，如果文本中有"【竞品A】【竞品B】"这类标注就按标注数，没有标注则填1）。如果某个差评问题只在1个来源出现过，标注为单一来源问题，可信度较低；如果在2个以上来源都出现，标注为通病，可信度较高。\n\n'+
+    '严格按JSON格式返回，不要有任何其他文字或markdown符号：\n'+
+    '{"summary":{"total_reviews":数字,"distinct_sources":数字,"main_issues_count":数字,"opportunity_score":1-10数字,"product_score":1-10数字},'+
+    '"issues":[{"category":"问题类别","frequency":数字,"severity":"高/中/低","cross_source":true或false,"solution_type":"工厂端/运营端/两者都有","description":"描述30字内","factory_solution":"方案或null","ops_solution":"方案或null"}],'+
+    '"selling_points":[{"title":"英文大写卖点","chinese":"中文说明","listing_copy":"五点描述写法50字内","source":"来源差评","confidence":"高/中/低"}],'+
+    '"pros":["亮点1","亮点2","亮点3"],'+
+    '"risk_warning":"风险提示或null",'+
+    '"sourcing_keywords":{"chinese":["中文采购关键词1（用于1688）","中文采购关键词2","中文采购关键词3"],"english":["英文采购关键词1（用于Alibaba）","英文采购关键词2","英文采购关键词3"],"must_have":["必须满足的产品特征1","特征2","特征3"],"nice_to_have":["加分特征1","特征2"],"exclude":["应排除的特征1","特征2"]}}';
+
+  try{
+    var response=await fetch('https://api.deepseek.com/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'deepseek-chat',max_tokens:2200,messages:[{role:'system',content:'你是亚马逊运营专家，严格按JSON格式返回，不要有任何其他文字。'},{role:'user',content:prompt}]})
+    });
+    var data=await response.json();
+    var raw=data.choices[0].message.content||'';
+    var result=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    window.__lastReviewResult=result;
+    renderSelectionKeywords(result,name);
+  }catch(e){
+    g('title-kw-output').style.display='block';
+    g('title-kw-output').innerHTML='<div style="background:#fdecea;border-radius:8px;padding:14px;color:#c0200a;font-size:13px;">分析失败：'+e.message+'</div>';
+  }
+
+  btn.disabled=false;
+  btn.innerHTML='🔑 分析评论，生成选品关键词 →';
+}
+
+function renderSelectionKeywords(result,name){
+  var kwDiv=g('title-kw-output');
+  kwDiv.style.display='block';
+
+  var sk=result.sourcing_keywords||{};
+  var cnKws=sk.chinese||[];
+  var enKws=sk.english||[];
+  var mustHave=sk.must_have||[];
+  var niceHave=sk.nice_to_have||[];
+  var exclude=sk.exclude||[];
+
+  var html='';
+
+  // ===== Confidence banner based on sample size =====
+  var totalReviews=result.summary.total_reviews||0;
+  var distinctSources=result.summary.distinct_sources||1;
+  var confLevel, confColor, confBg, confMsg;
+  if(totalReviews<20){
+    confLevel='低'; confColor='#c0200a'; confBg='#fdecea';
+    confMsg='样本量仅'+totalReviews+'条，远低于30条可信门槛。下面的差异化方向和关键词只能作为初步方向参考，不建议直接据此下单备货，建议继续收集更多差评再做最终判断。';
+  }else if(totalReviews<50){
+    confLevel='中'; confColor='#b07010'; confBg='#fdf5e0';
+    confMsg='样本量'+totalReviews+'条，基本达到可用门槛，但建议补充到50条以上以提高可信度，尤其是"只在单一来源出现"的问题需要谨慎对待。';
+  }else{
+    confLevel='高'; confColor='#1a6b44'; confBg='#e8f5ee';
+    confMsg='样本量'+totalReviews+'条，已达到较可靠的分析门槛。';
+  }
+  if(distinctSources<2){
+    confMsg+='<br>注意：当前评论似乎只来自1个竞品来源，无法区分"品类通病"和"单一工厂品控问题"，建议补充其他竞品的差评做交叉验证。';
+  }
+
+  html+='<div style="background:'+confBg+';border-radius:8px;padding:12px 16px;margin-bottom:12px;">';
+  html+='<div style="font-size:13px;font-weight:700;color:'+confColor+';margin-bottom:4px;">数据可信度：'+confLevel+'（'+totalReviews+'条评论 · 来自'+distinctSources+'个来源）</div>';
+  html+='<div style="font-size:12px;color:'+confColor+';line-height:1.6;">'+confMsg+'</div>';
+  html+='</div>';
+
+  // Issues
+  if(result.issues&&result.issues.length){
+    html+='<div style="background:#fdf5e0;border-radius:8px;padding:14px 16px;margin-bottom:10px;">';
+    html+='<div style="font-size:13px;font-weight:600;color:#b07010;margin-bottom:8px;">差评问题汇总（机会分'+result.summary.opportunity_score+'/10）</div>';
+    result.issues.forEach(function(iss){
+      var crossTag=iss.cross_source?'<span style="background:#e8f5ee;color:#1a6b44;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;">多来源通病</span>':'<span style="background:#fdecea;color:#c0200a;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;">单一来源，谨慎参考</span>';
+      html+='<div style="font-size:12px;color:#444;margin-bottom:4px;">· '+iss.category+'（'+iss.frequency+'次，严重度'+iss.severity+'）'+crossTag+'— '+iss.description+'</div>';
+    });
+    html+='</div>';
+  }
+
+  // Selling points
+  if(result.selling_points&&result.selling_points.length){
+    html+='<div style="background:#e8f5ee;border-radius:8px;padding:14px 16px;margin-bottom:10px;">';
+    html+='<div style="font-size:13px;font-weight:600;color:#1a6b44;margin-bottom:8px;">提炼出的差异化卖点</div>';
+    result.selling_points.forEach(function(sp,i){
+      var confTag=sp.confidence?'<span style="font-size:10px;color:#888;margin-left:6px;">(可信度'+sp.confidence+')</span>':'';
+      html+='<div style="font-size:12px;color:#1a6b44;margin-bottom:6px;"><strong>'+(i+1)+'. '+sp.title+'</strong>'+confTag+' — '+sp.chinese+'</div>';
+    });
+    html+='</div>';
+  }
+
+  // Sourcing keywords + direct links
+  html+='<div style="background:#e8f0f8;border-radius:8px;padding:14px 16px;">';
+  html+='<div style="font-size:13px;font-weight:600;color:#1a4a7a;margin-bottom:10px;">🔑 选品采购关键词（点击直接搜索）</div>';
+
+  if(cnKws.length){
+    html+='<div style="font-size:12px;color:#444;margin-bottom:6px;font-weight:600;">1688搜索（中文）：</div>';
+    cnKws.forEach(function(kw){
+      var cleanKw=kw.split('（')[0].trim();
+      html+='<a href="https://s.1688.com/selloffer/offer_search.htm?keywords='+encodeURIComponent(cleanKw)+'" target="_blank" style="display:inline-block;background:white;border:1px solid #c0d0e8;border-radius:20px;padding:5px 12px;margin:3px;font-size:12px;color:#1a4a7a;text-decoration:none;">'+cleanKw+' →</a>';
+    });
+  }
+  if(enKws.length){
+    html+='<div style="font-size:12px;color:#444;margin:10px 0 6px;font-weight:600;">Alibaba搜索（英文）：</div>';
+    enKws.forEach(function(kw){
+      var cleanKw=kw.split('（')[0].trim();
+      html+='<a href="https://www.alibaba.com/trade/search?SearchText='+encodeURIComponent(cleanKw)+'" target="_blank" style="display:inline-block;background:white;border:1px solid #c0d0e8;border-radius:20px;padding:5px 12px;margin:3px;font-size:12px;color:#1a4a7a;text-decoration:none;">'+cleanKw+' →</a>';
+    });
+  }
+
+  if(mustHave.length){
+    html+='<div style="font-size:12px;color:#1a6b44;margin-top:10px;"><strong>✅ 必须满足：</strong>'+mustHave.join('、')+'</div>';
+  }
+  if(niceHave.length){
+    html+='<div style="font-size:12px;color:#b07010;margin-top:4px;"><strong>⭐ 加分项：</strong>'+niceHave.join('、')+'</div>';
+  }
+  if(exclude.length){
+    html+='<div style="font-size:12px;color:#c0200a;margin-top:4px;"><strong>❌ 排除：</strong>'+exclude.join('、')+'</div>';
+  }
+  html+='<div style="font-size:11px;color:#888;margin-top:10px;">点击关键词标签会在新窗口打开搜索结果。找到合适产品后，把链接复制到「⑦ 商品打分」标签页进行评分对比。</div>';
+  html+='</div>';
+
+  kwDiv.innerHTML=html;
+  kwDiv.scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
